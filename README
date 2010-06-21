@@ -1,0 +1,49 @@
+Paul Hubbard pfhubbard@ucsd.edu
+June 21 2010
+
+This project is an evolution of the 'office-weather' project:
+
+http://github.com/phubbard/office-weather
+
+This version is a complete re-write
+* Switch from USB communications to TCP over ethernet, by using the 
+  Arduino ethernet shield: http://www.sparkfun.com/commerce/product_info.php?products_id=9026
+* Add a 3-color LED as status indicator: http://www.sparkfun.com/commerce/product_info.php?products_id=8579
+* Python code is much more complex - more below
+
+Goals:
+* Use Arduino to monitor our Buildbot and the latest build. If it breaks, red light, if all tests are passing, green light, maybe other colors if useful.
+* Include the previous weather station functionality
+* Be a fun hack
+
+Hardware requirements:
+* Arduino
+* Ethernet shield
+* BlinkM RGB LED (URL above)
+* LM35CAZ Nice, TO-92 cased, temperature sensor with 0-5VDC output and no
+   external components required. A few bucks from National.
+   http://www.national.com/mpf/LM/LM35.html#Overview
+ * Ohmic Instruments SC-600 humidity sensor and signal conditioning module.
+   http://www.ohmicinstruments.com/pdf/SC-600.pdf
+   About $15, quite cheap for a sensor this nice. You need an external RC
+   lowpass, so two more components in the circuit. See the PDF.
+
+Software requirements:
+* Python
+* Twisted
+* Arduino plus BlinkM libaries
+
+Current status and functionality:
+* The python code polls the buildbot, extracts build status and merges the most 
+  recent builds. From this, it chooses an LED color.
+* In parallel, the python code connects to the Arduino, sends the current color 
+  as a 3-byte RGB string, and then reads two ADC counts that correspond to temp
+  and humidity readings. Units and calibration are done in the python code, as
+  before.
+* Nifty animated BlinkM startup sequence when you hit reset. ;)
+
+To-do:
+* Write a TAC file, so I can run it as a daemon
+* Deploy on local linux server and leave it running
+* Better code comments and docs
+* Tweak and tune

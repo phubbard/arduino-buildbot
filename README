@@ -1,6 +1,9 @@
 Paul Hubbard pfhubbard@ucsd.edu
 June 21 2010
 
+Picture: 
+ http://github.com/phubbard/arduino-buildbot/raw/master/a-b.jpg
+
 This project is an evolution of the 'office-weather' project:
 
 http://github.com/phubbard/office-weather
@@ -27,6 +30,7 @@ Hardware requirements:
    http://www.ohmicinstruments.com/pdf/SC-600.pdf
    About $15, quite cheap for a sensor this nice. You need an external RC
    lowpass, so two more components in the circuit. See the PDF.
+* Optional mini breadboard
 
 Software requirements:
 * Python

@@ -36,6 +36,10 @@ lastTemp = 0.0
 lastRH = 0.0
 
 class ALOptions(usage.Options):
+    """
+    Command-line parameters for the program. Which arduino (IP), what port to
+    serve HTTP on, polling frequency, where to find buildbot, etc.
+    """
     optParameters = [
         ['port', 'p', 80, 'TCP port to connect to'],
         ['wsport', 'w', 2000, 'TCP port to run webserver on'],
@@ -46,6 +50,10 @@ class ALOptions(usage.Options):
     ]
 
 class indexPage(resource.Resource):
+    """
+    Class for the web page. Just returns a single page on the root with the
+    latest temp and humidity.
+    """
     isLeaf = True
 
     def render_GET(self, request):
@@ -55,6 +63,10 @@ class indexPage(resource.Resource):
         return ccStr
 
 class ArduinoClient(LineReceiver):
+    """
+    Main interface to the arduino. When we connect, set the color and trigger
+    a read of the latest ADC readings.
+    """
     def connectionMade(self):
         global current_color
         logging.info('Connected! Sending color ' + current_color)
@@ -67,7 +79,10 @@ class ArduinoClient(LineReceiver):
         self.transport.loseConnection()
 
     def processData(self, data):
-        """Convert raw ADC counts into SI units as per datasheets"""
+        """
+        Convert raw ADC counts into SI units as per datasheets. Could have been
+        done on the arduino, but easier to get working here.
+        """
         # Skip bad reads
         if len(data) != 2:
             return
@@ -97,6 +112,9 @@ class ArduinoClient(LineReceiver):
         logging.debug('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
 
 class ACFactory(protocol.ServerFactory):
+    """
+    Factory class for arduino connections.
+    """
     protocol = ArduinoClient
 
     def startedConnecting(self, connector):
@@ -109,6 +127,10 @@ class ACFactory(protocol.ServerFactory):
         pass
 
 def poll_buildbot(bbot_url, main_build):
+    """
+    Hit the XML-RPC service in buildbot to query the last few builds and
+    look for the one(s) we're monitoring.
+    """
     global last_time, current_color
     proxy = ServerProxy(bbot_url)
 
@@ -159,17 +181,13 @@ def poll_buildbot(bbot_url, main_build):
         current_color = GREEN
     logging.debug('sum: %d count: %d color: %s' % (sum, len(states), current_color))
 
-if __name__ == "__main__":
+def ab_main(o):
+    """
+    Glue it all together. Parse the command line, setup logging, start the
+    timers, connect up website.
+    """
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s [%(funcName)s] %(message)s')
-
-    o = ALOptions()
-    try:
-        o.parseOptions()
-    except usage.UsageError, errortext:
-        logging.error('%s %s' % (sys.argv[0], errortext))
-        logging.info('Try %s --help for usage details' % sys.argv[0])
-        raise SystemExit, 1
 
     bbot_url = o.opts['bboturl']
     main_build = o.opts['build']
@@ -195,3 +213,14 @@ if __name__ == "__main__":
 
     logging.info('Running!')
     reactor.run()
+
+if __name__ == "__main__":
+    o = ALOptions()
+    try:
+        o.parseOptions()
+    except usage.UsageError, errortext:
+        logging.error('%s %s' % (sys.argv[0], errortext))
+        logging.info('Try %s --help for usage details' % sys.argv[0])
+        raise SystemExit, 1
+
+    ab_main(o)

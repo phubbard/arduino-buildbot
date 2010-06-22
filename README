@@ -45,9 +45,8 @@ Current status and functionality:
   and humidity readings. Units and calibration are done in the python code, as
   before.
 * Nifty animated BlinkM startup sequence when you hit reset. ;)
+* TAC file from deldotdr for running as a daemon
 
 To-do:
-* Write a TAC file, so I can run it as a daemon
 * Deploy on local linux server and leave it running
-* Better code comments and docs
 * Tweak and tune

@@ -10,24 +10,13 @@ from twisted.python import usage
 
 from server import *
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s [%(funcName)s] %(message)s')
 
 application = service.Application('arduino-buildbot')
 
-
-class ALOptions(usage.Options):
-    optParameters = [
-        ['port', 'p', 80, 'TCP port to connect to'],
-        ['wsport', 'w', 2000, 'TCP port to run webserver on'],
-        ['hostname', 'h', 'ooi-arduino.ucsd.edu', 'hostname or IP to connect to'],
-        ['build', 'b', 'lcaarch', 'Prefix for build(s) to monitor'],
-        ['bboturl', 'u', 'http://ooici.net:8010/xmlrpc', 'Buildbot XML-RPC URL'],
-        ['interval', 'i', 30, 'Polling interval, seconds'],
-    ]
-
+# Use defaults from the ALOptions
 o = ALOptions()
-
 bbot_url = o.opts['bboturl']
 main_build = o.opts['build']
 port = o.opts['port']
@@ -50,5 +39,3 @@ root = indexPage()
 site = server.Site(root)
 ws = internet.TCPServer(wsport, site)
 ws.setServiceParent(service.IServiceCollection(application))
-
-

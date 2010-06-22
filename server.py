@@ -44,7 +44,7 @@ class ALOptions(usage.Options):
         ['port', 'p', 80, 'TCP port to connect to'],
         ['wsport', 'w', 2000, 'TCP port to run webserver on'],
         ['hostname', 'h', 'ooi-arduino.ucsd.edu', 'hostname or IP to connect to'],
-        ['build', 'b', 'lcaarch', 'Prefix for build(s) to monitor'],
+        ['build', 'b', 'lcaarch-ec', 'Prefix for build(s) to monitor'],
         ['bboturl', 'u', 'http://ooici.net:8010/xmlrpc', 'Buildbot XML-RPC URL'],
         ['interval', 'i', 30, 'Polling interval, seconds'],
     ]
@@ -73,7 +73,7 @@ class ArduinoClient(LineReceiver):
         self.transport.write(current_color + '\n')
 
     def lineReceived(self, line):
-        logging.info('sensor data: "%s"' % line)
+        logging.debug('sensor data: "%s"' % line)
         data = line.split()
         self.processData(data)
         self.transport.loseConnection()
@@ -111,7 +111,7 @@ class ArduinoClient(LineReceiver):
         logging.info('Temp: %f C Relative humidity: %f %%' % (temp, humidity))
         logging.debug('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
 
-class ACFactory(protocol.ServerFactory):
+class ACFactory(protocol.ClientFactory):
     """
     Factory class for arduino connections.
     """
@@ -186,7 +186,7 @@ def ab_main(o):
     Glue it all together. Parse the command line, setup logging, start the
     timers, connect up website.
     """
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s [%(funcName)s] %(message)s')
 
     bbot_url = o.opts['bboturl']

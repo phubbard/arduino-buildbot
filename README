@@ -48,5 +48,4 @@ Current status and functionality:
 * TAC file from deldotdr for running as a daemon
 
 To-do:
-* Deploy on local linux server and leave it running
 * Tweak and tune

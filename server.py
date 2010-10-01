@@ -147,39 +147,26 @@ def poll_buildbot(bbot_url, main_build):
         return
 
     states = []
+    last_buildnum = 0
+    last_status = ''
 
     for build in builds:
         # Is this the project we are watching?
         if re.search(main_build + '.+?', build[0]):
             builder, build, status = build[0], build[1], build[5]
 
-            if status == 'success':
-                states.append(1)
-            else:
-                states.append(0)
+            buildnum = int(build)
+            # Later builds have higher numbers; only want the last one
+            if buildnum > last_buildnum:
+                last_buildnum = buildnum
+                last_status = status
 
-            message = "'%s' build %s is %s" % (builder, build, status)
-            if status == 'success':
-                logging.info(message)
-            else:
-                logging.warn(message)
-
-    last_time = now
-    if len(states) == 0:
-        return
-
-    """
-    This odd bit of logic is a reduction of the set of build results. Only green light
-    if all builds are OK.
-    """
-    sum = 0
-    for x in states:
-        sum = sum + x
-    if sum < len(states):
-        current_color = RED
-    else:
+    if last_status == 'success':
         current_color = GREEN
-    logging.debug('sum: %d count: %d color: %s' % (sum, len(states), current_color))
+    elif last_status != '':
+        current_color = RED
+
+    logging.debug('Color: %s' % current_color)
 
 def ab_main(o):
     """

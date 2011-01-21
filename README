@@ -1,6 +1,10 @@
 Paul Hubbard pfhubbard@ucsd.edu
 June 21 2010
 
+UPDATE Jan 21 2011 - Buildbot 0.8.3 breaks this code by removing the XML-RPC interface.
+I need to rewrite this for JSON, so for now the code is just plain broken.
+
+
 Picture: 
  http://github.com/phubbard/arduino-buildbot/raw/master/a-b.jpg
 

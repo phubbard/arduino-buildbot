@@ -25,7 +25,7 @@ host = o.opts['hostname']
 interval = int(o.opts['interval'])
 
 logging.info('Setting up a looping call to the poller, %d seconds' % interval)
-pt = internet.TimerService(interval, poll_buildbot, bbot_url, main_build)
+pt = internet.TimerService(interval, poll_bb_json, bbot_url, main_build)
 pt.setServiceParent(service.IServiceCollection(application))
 
 logging.info('Setting up a looping call for the arduino client')

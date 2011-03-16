@@ -171,6 +171,7 @@ def decode_page(json_page, bbot_url, main_build):
 def poll_bb_json(bbot_url, main_build):
     """
     Pull the JSON-encoded build status, used to be XMLRPC but that was removed from 0.8.3
+    See http://buildbot.net/buildbot/docs/latest/Buildbot-Web-Resources.html
     """
     global last_time, current_color
 

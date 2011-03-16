@@ -9,25 +9,22 @@
 """
 
 from time import time
-from xmlrpclib import ServerProxy
 import logging
 import re
 import sys
 from twisted.web import server, resource
 from twisted.protocols.basic import LineReceiver
+from twisted.web import client
 from twisted.internet import reactor, protocol, task
 from twisted.python import usage
+import json
 
-"""
-The arduino reads these as bytes and subtracts 'a', so a is zero, etc.
-Crude but simple.
-"""
+# The arduino reads these as bytes and subtracts 'a', so a is zero, etc.
 RED = 'zaa'
 GREEN = 'aza'
 BLUE = 'aaz'
 WHITE = 'zzz'
 BLACK = 'aaa'
-
 
 # Global variables
 current_color = BLUE
@@ -44,8 +41,8 @@ class ALOptions(usage.Options):
         ['port', 'p', 80, 'TCP port to connect to'],
         ['wsport', 'w', 2000, 'TCP port to run webserver on'],
         ['hostname', 'h', 'ooi-arduino.ucsd.edu', 'hostname or IP to connect to'],
-        ['build', 'b', 'lcaarch-ec', 'Prefix for build(s) to monitor'],
-        ['bboturl', 'u', 'http://ooici.net:8010/xmlrpc', 'Buildbot XML-RPC URL'],
+        ['build', 'b', 'amoeba-ioncore-python', 'Prefix for build(s) to monitor'],
+        ['bboturl', 'u', 'http://ooici.net:8010', 'Buildbot URL'],
         ['interval', 'i', 30, 'Polling interval, seconds'],
     ]
 
@@ -126,47 +123,63 @@ class ACFactory(protocol.ClientFactory):
     def clientConnectionLost(self, connector, reason):
         pass
 
-def poll_buildbot(bbot_url, main_build):
-    """
-    Hit the XML-RPC service in buildbot to query the last few builds and
-    look for the one(s) we're monitoring.
-    """
+def set_status(new_color):
     global last_time, current_color
-    proxy = ServerProxy(bbot_url)
 
-    # First run?
-    if last_time == 0:
-        last_time = time() - 3600;
+    last_time = time()
+    current_color = new_color
 
-    logging.debug('Checking for builds...')
-    now = time()
-    builds = proxy.getAllBuildsInInterval(last_time, now)
-    if len(builds) > 0:
-        logging.debug('%d total build(s) found' % len(builds))
+def decode_buildpage(json_build_page):
+    """
+    Given a page for a specific build, parse to extract build status
+    """
+    logging.debug('starting to decode build page')
+    dp = json.loads(json_build_page)
+    """
+    Should get something like
+    "text": [
+    "build",
+    "successful"
+    ],
+     """
+    if dp['text'][1] == 'successful':
+        logging.info('Build successful, going green')
+        set_status(GREEN)
     else:
+        logging.info('Build is "%s", going red' % dp['text'][1])
+        set_status(RED)
+    
+
+def decode_page(json_page, bbot_url, main_build):
+    logging.debug('Starting to decode main json page')
+    dp = json.loads(json_page)
+
+    status = dp[main_build]['state']
+    if status != 'idle':
+        logging.debug('Build state is %s, setting blue' % status)
+        # Build in progress
+        set_status(BLUE)
         return
 
-    states = []
-    last_buildnum = 0
-    last_status = ''
+    last_buildno = max(dp[main_build]['cachedBuilds'])
+    logging.debug('Looking for build #%d' % last_buildno)
 
-    for build in builds:
-        # Is this the project we are watching?
-        if re.search(main_build + '.+?', build[0]):
-            builder, build, status = build[0], build[1], build[5]
+    d = client.getPage(bbot_url + '/json/builders/%s/builds/%d' % (main_build, last_buildno))
+    d.addCallback(decode_buildpage)
 
-            buildnum = int(build)
-            # Later builds have higher numbers; only want the last one
-            if buildnum > last_buildnum:
-                last_buildnum = buildnum
-                last_status = status
+    
+def poll_bb_json(bbot_url, main_build):
+    """
+    Pull the JSON-encoded build status, used to be XMLRPC but that was removed from 0.8.3
+    """
+    global last_time, current_color
 
-    if last_status == 'success':
-        current_color = GREEN
-    elif last_status != '':
-        current_color = RED
+    json_url = bbot_url + '/json/builders/'
 
-    logging.debug('Color: %s' % current_color)
+    logging.debug('about to check %s' % json_url)
+    d = client.getPage(json_url)
+    d.addCallback(decode_page, bbot_url, main_build)
+
 
 def ab_main(o):
     """
@@ -184,7 +197,7 @@ def ab_main(o):
     interval = int(o.opts['interval'])
 
     logging.info('Setting up a looping call to the poller, %d seconds' % interval)
-    pt = task.LoopingCall(poll_buildbot, bbot_url, main_build)
+    pt = task.LoopingCall(poll_bb_json, bbot_url, main_build)
     pt.start(interval)
 
     logging.info('Setting up a looping call for the arduino client')

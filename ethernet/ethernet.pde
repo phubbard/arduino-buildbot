@@ -48,7 +48,7 @@ void setup()
   Ethernet.begin(mac, ip, gw, subnet);
   server.begin();
 
-  // When lite goes out, init is complete.
+  // When light goes out, init is complete.
   BlinkM_fadeToRGB(blinkm_addr, 0x00, 0x00, 0x00);
 }
 

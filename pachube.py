@@ -14,7 +14,7 @@ from urllib2 import urlopen
 import time
 
 
-DATA_URL = 'http://ooici.net:2000/'
+DATA_URL = 'http://localhost:2000/'
 UPDATE_DELAY = 60.0; # seconds between polls
 
 API_KEY = open('api.txt').read()
@@ -47,10 +47,14 @@ def update_byhand(temp, rh):
     log.debug('Updated OK')
     conn.close()
 
+def update_pachube():
+    temp, rh = grab_data()
+    if temp > 0.0:
+        update_byhand(temp, rh)
+
 def main():
     while True:
-        temp, rh = grab_data()
-        update_byhand(temp, rh)
+        update_pachube()
         time.sleep(UPDATE_DELAY)
 
 if __name__ == '__main__':

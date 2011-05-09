@@ -15,9 +15,11 @@ import sys
 from twisted.web import server, resource
 from twisted.protocols.basic import LineReceiver
 from twisted.web import client
-from twisted.internet import reactor, protocol, task
+from twisted.internet import reactor, protocol, task, threads
 from twisted.python import usage
 import json
+
+from pachube import update_pachube
 
 # The arduino reads these as bytes and subtracts 'a', so a is zero, etc.
 RED = 'zaa'
@@ -181,7 +183,6 @@ def poll_bb_json(bbot_url, main_build):
     d = client.getPage(json_url)
     d.addCallback(decode_page, bbot_url, main_build)
 
-
 def ab_main(o):
     """
     Glue it all together. Parse the command line, setup logging, start the
@@ -205,6 +206,10 @@ def ab_main(o):
     ct = task.LoopingCall(reactor.connectTCP, host, port, ACFactory())
     ct.start(interval)
 
+    logging.info('Setting up looping call to pachube update')
+    pt = task.LoopingCall(threads.deferToThread, update_pachube)
+    pt.start(interval)
+    
     logging.info('Setting up webserver on port %d' % wsport)
 
     # HTTP interface

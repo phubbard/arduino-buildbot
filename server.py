@@ -27,7 +27,7 @@ WHITE = 'zzz'
 BLACK = 'aaa'
 
 # Global variables
-current_color = BLUE
+current_color = WHITE
 last_time = 0
 lastTemp = 0.0
 lastRH = 0.0
@@ -41,8 +41,8 @@ class ALOptions(usage.Options):
         ['port', 'p', 80, 'TCP port to connect to'],
         ['wsport', 'w', 2000, 'TCP port to run webserver on'],
         ['hostname', 'h', 'ooi-arduino.ucsd.edu', 'hostname or IP to connect to'],
-        ['build', 'b', 'amoeba-ioncore-python', 'Prefix for build(s) to monitor'],
-        ['bboturl', 'u', 'http://ooici.net:8010', 'Buildbot URL'],
+        ['build', 'b', 'ioncore_test', 'Prefix for build(s) to monitor'],
+        ['bboturl', 'u', 'http://buildbot.oceanobservatories.org:8010', 'Buildbot URL'],
         ['interval', 'i', 30, 'Polling interval, seconds'],
     ]
 
@@ -148,7 +148,7 @@ def decode_buildpage(json_build_page):
     else:
         logging.info('Build is "%s", going red' % dp['text'][1])
         set_status(RED)
-    
+
 
 def decode_page(json_page, bbot_url, main_build):
     logging.debug('Starting to decode main json page')
@@ -167,7 +167,7 @@ def decode_page(json_page, bbot_url, main_build):
     d = client.getPage(bbot_url + '/json/builders/%s/builds/%d' % (main_build, last_buildno))
     d.addCallback(decode_buildpage)
 
-    
+
 def poll_bb_json(bbot_url, main_build):
     """
     Pull the JSON-encoded build status, used to be XMLRPC but that was removed from 0.8.3

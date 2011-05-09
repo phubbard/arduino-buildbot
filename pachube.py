@@ -17,7 +17,7 @@ import time
 DATA_URL = 'http://ooici.net:2000/'
 UPDATE_DELAY = 60.0; # seconds between polls
 
-API_KEY = '235cafb47b49596a9c54c9a5fa249ea5da2c43d70d6d2b24b21da95a91371397'
+API_KEY = open('api.txt').read()
 API_URL = '/v2/feeds/22374.csv'
 
 def grab_data(data_url=DATA_URL):

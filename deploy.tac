@@ -5,10 +5,11 @@ from twisted.application import service
 from twisted.application import internet
 
 from twisted.web import server
-from twisted.internet import reactor
+from twisted.internet import reactor, threads
 from twisted.python import usage
 
 from server import *
+from pachube import update_pachube
 
 logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s [%(funcName)s] %(message)s')
@@ -31,6 +32,10 @@ pt.setServiceParent(service.IServiceCollection(application))
 logging.info('Setting up a looping call for the arduino client')
 ct = internet.TimerService(interval, reactor.connectTCP, host, port, ACFactory())
 ct.setServiceParent(service.IServiceCollection(application))
+
+logging.info('Setting up a looping call for the pachube updates')
+pt = internet.TimerService(interval, threads.deferToThread, update_pachube)
+pt.setServiceParent(service.IServiceCollection(application))
 
 logging.info('Setting up webserver on port %d' % wsport)
 

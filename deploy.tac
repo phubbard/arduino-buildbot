@@ -34,7 +34,7 @@ ct = internet.TimerService(interval, reactor.connectTCP, host, port, ACFactory()
 ct.setServiceParent(service.IServiceCollection(application))
 
 logging.info('Setting up a looping call for the pachube updates')
-pt = internet.TimerService(interval, threads.deferToThread, update_pachube)
+pt = internet.TimerService(interval * 5.0, threads.deferToThread, update_pachube)
 pt.setServiceParent(service.IServiceCollection(application))
 
 logging.info('Setting up webserver on port %d' % wsport)

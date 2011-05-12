@@ -208,8 +208,9 @@ def ab_main(o):
 
     logging.info('Setting up looping call to pachube update')
     pt = task.LoopingCall(threads.deferToThread, update_pachube)
-    pt.start(interval)
-    
+    # Push at longer intervals to pachube
+    pt.start(interval * 5.0)
+
     logging.info('Setting up webserver on port %d' % wsport)
 
     # HTTP interface

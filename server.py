@@ -19,8 +19,6 @@ from twisted.internet import reactor, protocol, task, threads
 from twisted.python import usage
 import json
 
-from pachube import update_pachube
-
 # The arduino reads these as bytes and subtracts 'a', so a is zero, etc.
 RED = 'zaa'
 GREEN = 'aza'
@@ -110,6 +108,8 @@ class ArduinoClient(LineReceiver):
         logging.info('Temp: %f C Relative humidity: %f %%' % (temp, humidity))
         logging.debug('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
 
+        update_pachube()
+
 class ACFactory(protocol.ClientFactory):
     """
     Factory class for arduino connections.
@@ -151,7 +151,6 @@ def decode_buildpage(json_build_page):
         logging.info('Build is "%s", going red' % dp['text'][1])
         set_status(RED)
 
-
 def decode_page(json_page, bbot_url, main_build):
     logging.debug('Starting to decode main json page')
     dp = json.loads(json_page)
@@ -169,7 +168,6 @@ def decode_page(json_page, bbot_url, main_build):
     d = client.getPage(bbot_url + '/json/builders/%s/builds/%d' % (main_build, last_buildno))
     d.addCallback(decode_buildpage)
 
-
 def poll_bb_json(bbot_url, main_build):
     """
     Pull the JSON-encoded build status, used to be XMLRPC but that was removed from 0.8.3
@@ -182,6 +180,26 @@ def poll_bb_json(bbot_url, main_build):
     logging.debug('about to check %s' % json_url)
     d = client.getPage(json_url)
     d.addCallback(decode_page, bbot_url, main_build)
+
+def update_pachube():
+    """
+    Pachube likes simple updates, since I just have two channels I chose to a CSV encoding. JSON
+    and XML are also available, and better for more complex data. The tricky bit here is using
+    the PUT method from the getPage.
+    """
+    global lastTemp, lastRH
+
+    url = 'http://api.pachube.com/v2/feeds/22374.csv'
+    api_key = open('api.txt').read()
+    data_str = '0,%f\n1,%f\n\n' % (lastTemp, lastRH)
+
+    headers = {'X-PachubeApiKey': api_key}
+    headers['Content-Length'] = str(len(data_str))
+
+    logging.debug('pachube time!')
+    d = client.getPage(url, method='PUT', postdata=data_str, headers=headers)
+    d.addCallback(lambda _: logging.info('Pachube updated ok'))
+    d.addErrback(lambda _: logging.error('Error posting to pachube'))
 
 def ab_main(o):
     """
@@ -205,11 +223,6 @@ def ab_main(o):
     logging.info('Setting up a looping call for the arduino client')
     ct = task.LoopingCall(reactor.connectTCP, host, port, ACFactory())
     ct.start(interval)
-
-    logging.info('Setting up looping call to pachube update')
-    pt = task.LoopingCall(threads.deferToThread, update_pachube)
-    # Push at longer intervals to pachube
-    pt.start(interval * 5.0)
 
     logging.info('Setting up webserver on port %d' % wsport)
 
